@@ -1,0 +1,18 @@
+services:
+  # database service
+  postgresdb:
+    image: postgres:16-alpine
+
+  mysqldb:
+    image: mysql:8.0.29
+
+networks:
+  default:
+    driver: bridge
+    name: tedu-microservices
+
+volumes:
+  postgresdb_data:
+    name: postgresdb_data
+  mysqldb_data:
+    name: mysqldb_data

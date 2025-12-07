@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  postgresdb:
+    container_name: postgresdb
+    environment:
+      - POSTGRES_PASSWORD=passw0rd!
+    ports:
+      - "5432:5432"
+    restart: always
+    volumes:
+      - postgresdb_data:/var/lib/postgresql/data
+  mysqldb:
+    container_name: mysqldb
+    environment:
+      - MYSQL_ROOT_PASSWORD=passw0rd!
+      - MYSQL_DATABASE=root
+    ports:
+      - "3306:3306"
+    restart: always
+    volumes:
+      - mysqldb_data:/var/lib/mysql

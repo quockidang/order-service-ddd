@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-webapi
+  namespace: kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-webapi
+  template:
+    metadata:
+      labels:
+        app: kafka-webapi
+    spec:
+      containers:
+        - name: kafka-webapi
+          image: kafka-webapi:1.0
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka-webapi
+  namespace: kafka
+spec:
+  selector:
+    app: kafka-webapi
+  ports:
+    - port: 80
+      targetPort: 8080

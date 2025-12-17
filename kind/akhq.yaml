@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: akhq
+  namespace: kafka
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: akhq
+  template:
+    metadata:
+      labels:
+        app: akhq
+    spec:
+      containers:
+        - name: akhq
+          image: tchiotludo/akhq:0.25.1
+          ports:
+            - containerPort: 8080
+          env:
+            - name: KAFKA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: akhq-kafka-credentials
+                  key: username
+
+            - name: KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: akhq-kafka-credentials
+                  key: password
+            - name: AKHQ_CONFIGURATION
+              value: |
+                akhq:
+                  connections:
+                    kafka-cluster:
+                      properties:
+                        bootstrap.servers: "my-kafka-kafka-bootstrap:9092"
+                        security.protocol: SASL_PLAINTEXT
+                        sasl.mechanism: SCRAM-SHA-512
+                        sasl.jaas.config: >
+                          org.apache.kafka.common.security.scram.ScramLoginModule required
+                          username="${KAFKA_USERNAME}"
+                          password="${KAFKA_PASSWORD}";
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: akhq
+  namespace: kafka
+spec:
+  type: NodePort
+  selector:
+    app: akhq
+  ports:
+    - port: 8080
+      targetPort: 8080
+      nodePort: 30080

@@ -2,6 +2,7 @@
 using HealthChecks.UI.Client;
 using Infrastructure.Middlewares;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Ordering.API;
 using Ordering.API.Extensions;
 using Ordering.Application;
 using Ordering.Infrastructure;
@@ -26,6 +27,8 @@ try
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
     builder.Services.AddSwaggerGen();
+    builder.Services.AddSingleton<IKafkaProducerService, KafkaProducerService>();
+
     
     var app = builder.Build();
 
@@ -45,6 +48,8 @@ try
         await orderContextSeed.SeedAsync();
     }
 
+
+
     app.UseMiddleware<ErrorWrappingMiddleware>();
     
     // app.UseHttpsRedirection(); //production only
@@ -58,6 +63,8 @@ try
         ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
     });
     app.MapDefaultControllerRoute();
+
+    
 
     app.Run();
 }

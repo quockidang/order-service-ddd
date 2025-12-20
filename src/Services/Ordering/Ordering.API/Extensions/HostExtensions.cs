@@ -11,6 +11,7 @@ public static class HostExtensions
         builder.Configuration
             .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
             .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: true)
+            .AddJsonFile("appsettings.secrets.json", optional: true, reloadOnChange: true)
             .AddEnvironmentVariables();
 
         builder.Host.UseSerilog(Serilogger.Configure);

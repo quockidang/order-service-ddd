@@ -8,6 +8,7 @@ using Shared.Enums.Order;
 
 namespace Ordering.Domain.Entities;
 
+[Table("Order")]
 public class Order : AuditableEventEntity<long>, IEventEntity
 {
     [Required]

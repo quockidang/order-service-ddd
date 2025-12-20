@@ -1,0 +1,41 @@
+name: CI - .NET 8 + Docker Hub
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-test-docker:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@v4
+
+    - name: Setup .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore src/MyApp/MyApp.csproj
+
+    - name: Build
+      run: dotnet build src/Services/Ordering/Ordering.API/Ordering.API.csproj --configuration Release --no-restore
+
+    - name: Test
+      run: dotnet test --no-build --verbosity normal
+
+    - name: Login to Docker Hub
+      uses: docker/quockidang1
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build & Push Docker image
+  run: |
+    IMAGE_TAG=${GITHUB_SHA::7}
+    docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/myapp:$IMAGE_TAG .
+    docker push ${{ secrets.DOCKERHUB_USERNAME }}/myapp:$IMAGE_TAG

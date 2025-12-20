@@ -58,7 +58,6 @@ try
         ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
     });
     app.MapDefaultControllerRoute();
-
     app.Run();
 }
 catch (Exception ex)

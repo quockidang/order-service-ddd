@@ -104,3 +104,5 @@ bld/
 **/~$*.xlsx
 src/Services/Product.API/Properties/PublishProfiles/
 src/Services/Product.API/Properties/ServiceDependencies/
+
+.idea

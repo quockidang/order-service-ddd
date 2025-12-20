@@ -3,6 +3,10 @@ using Shared.Configurations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Ordering.Infrastructure.Persistence;
+using Ordering.Application.Common.Interfaces;
+using Ordering.Infrastructure.Repositories;
+using Contracts.Domains.Interfaces;
+using Infrastructure.Common;
 
 
 namespace Ordering.Infrastructure;
@@ -30,8 +34,8 @@ public static class ConfigureServices
         });
 
         services.AddScoped<OrderContextSeed>();
-        //services.AddScoped<IOrderRepository, OrderRepository>();
-        //services.AddScoped(typeof(IUnitOfWork<>), typeof(UnitOfWork<>));
+        services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped(typeof(IUnitOfWork<>), typeof(UnitOfWork<>));
 
         //services.AddScoped(typeof(ISmtpEmailService), typeof(SmtpEmailService));
 

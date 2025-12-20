@@ -21,7 +21,7 @@ public class OrderContext : DbContext
         _logger = logger;
     }
     
-    //public DbSet<Order> Orders { get; set; }
+    public DbSet<Order> Orders { get; set; }
     private List<BaseEvent> _baseEvents;
 
     private void SetBaseEventsBeforeSaveChanges()

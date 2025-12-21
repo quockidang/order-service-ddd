@@ -36,6 +36,6 @@ jobs:
 
     - name: Build & Push Docker image
       run: |
-        IMAGE_TAG=${GITHUB_SHA::7}
+        IMAGE_TAG=$(date -u +"%Y%m%d%H%M%S")
         docker build -f ordering.dockerfile -t ${{ secrets.DOCKERHUB_USERNAME }}/order-service:$IMAGE_TAG .
         docker push ${{ secrets.DOCKERHUB_USERNAME }}/order-service:$IMAGE_TAG

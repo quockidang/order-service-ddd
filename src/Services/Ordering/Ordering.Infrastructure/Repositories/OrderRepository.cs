@@ -9,7 +9,7 @@ using Ordering.Infrastructure.Persistence;
 
 namespace Ordering.Infrastructure.Repositories;
 
-public class OrderRepository : RepositoryBase<Order, long, OrderContext>, IOrderRepository
+public class OrderRepository : RepositoryBase<Order, Guid, OrderContext>, IOrderRepository
 {
     public OrderRepository(
         OrderContext dbContext,

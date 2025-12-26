@@ -9,7 +9,7 @@ using Shared.Enums.Order;
 namespace Ordering.Domain.Entities;
 
 [Table("Order")]
-public class Order : AuditableEventEntity<long>, IEventEntity
+public class Order : AuditableEventEntity<Guid>, IEventEntity
 {
     [Required]
     [Column(TypeName = "varchar(150)")]

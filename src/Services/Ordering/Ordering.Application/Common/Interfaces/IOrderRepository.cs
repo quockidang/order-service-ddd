@@ -3,7 +3,7 @@ using Ordering.Domain.Entities;
 
 namespace Ordering.Application.Common.Interfaces;
 
-public interface IOrderRepository : IRepositoryBase<Order, long>
+public interface IOrderRepository : IRepositoryBase<Order, Guid>
 {
     Task<IEnumerable<Order>> GetOrdersByUserNameAsync(string userName);
   //  Task<Order> GetOrderByDocumentNo(string documentNo);

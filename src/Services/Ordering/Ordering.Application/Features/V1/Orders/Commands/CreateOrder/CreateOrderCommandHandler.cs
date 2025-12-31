@@ -7,25 +7,38 @@ using Shared.SeedWork;
 
 namespace Ordering.Application.Features.V1.Orders;
 
-public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, ApiResult<long>>
+public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, ApiResult<Guid>>
 {
-   // private readonly IOrderRepository _orderRepository;
-   // private readonly IMapper _mapper;
+    private readonly IOrderRepository _orderRepository;
+    private readonly IMapper _mapper;
     private readonly ILogger _logger;
 
     public CreateOrderCommandHandler(
-       // IMapper mapper,
+        IOrderRepository orderRepository,
+        IMapper mapper,
         ILogger logger)
     {
-        //_orderRepository = orderRepository ?? throw new ArgumentNullException(nameof(orderRepository));
-       // _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+        _orderRepository = orderRepository ?? throw new ArgumentNullException(nameof(orderRepository));
+        _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     private const string MethodName = "CreateOrderCommandHandler";
 
-    public async Task<ApiResult<long>> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
+    public async Task<ApiResult<Guid>> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
     {
-       throw new NotImplementedException();
+        _logger.Information($"BEGIN: {MethodName} - Username: {request.UserName}");
+
+        var orderEntity = _mapper.Map<Order>(request);
+        if (string.IsNullOrWhiteSpace(orderEntity.InvoiceAddress))
+        {
+            orderEntity.InvoiceAddress = orderEntity.ShippingAddress;
+        }
+
+        var orderId = await _orderRepository.CreateAsync(orderEntity);
+
+        _logger.Information($"END: {MethodName} - Username: {request.UserName}");
+
+        return new ApiSuccessResult<Guid>(orderId);
     }
 }

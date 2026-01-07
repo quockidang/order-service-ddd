@@ -22,6 +22,8 @@ public class OrderContext : DbContext
     }
     
     public DbSet<Order> Orders { get; set; }
+
+    public DbSet<UploadSession> UploadSessions { get; set; }
     private List<BaseEvent> _baseEvents;
 
     private void SetBaseEventsBeforeSaveChanges()
@@ -43,6 +45,9 @@ public class OrderContext : DbContext
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
         
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<UploadSession>()
+                .HasIndex(u => new { u.UserName, u.FileName, u.IsCompleted });
     }
     
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = new CancellationToken())

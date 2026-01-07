@@ -35,6 +35,7 @@ public static class ConfigureServices
 
         services.AddScoped<OrderContextSeed>();
         services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IUploadSessionRepository, UploadSessionRepository>();
         services.AddScoped(typeof(IUnitOfWork<>), typeof(UnitOfWork<>));
 
         //services.AddScoped(typeof(ISmtpEmailService), typeof(SmtpEmailService));

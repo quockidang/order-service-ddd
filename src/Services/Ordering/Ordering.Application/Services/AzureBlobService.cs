@@ -9,17 +9,20 @@ using Microsoft.Extensions.Configuration;
 
 namespace Ordering.Application.Services;
 
-public interface ILargeFileService
+public interface IBlobStorageService
 {
-    Task<List<int>> InitOrGetStatusAsync(string blobName);
-  //  Task UploadChunkAsync(string blobName, int chunkIndex, Stream content);
-  //  Task<string> CommitSessionAsync(string blobName, List<int> allChunkIndices);
+    Task StageBlockAsync(string blobName, int chunkIndex, Stream content);
+    Task<List<int>> GetUploadedChunksAsync(string blobName);
+    Task<string> CommitBlocksAsync(string blobName, int totalChunks);
+    string GetBlobUrl(string blobName);
 }
 
 
-public class AzureBlobService : ILargeFileService
+public class AzureBlobService : IBlobStorageService
 {
     private readonly BlobContainerClient _containerClient;
+
+    private const int BLOCK_ID_LENGTH = 6; // Đủ cho 999,999 chunks
 
     public AzureBlobService(IConfiguration configuration)
     {
@@ -32,52 +35,66 @@ public class AzureBlobService : ILargeFileService
         _containerClient.CreateIfNotExists();
     }
 
-
-    // Helper: Chuyển đổi index số nguyên thành BlockID Base64 (độ dài cố định)
-    // Ví dụ: 1 -> "000001" -> Base64String
-    private static string GenerateBlockId(int index)
+    // Helper: 1 -> "000001" -> Base64
+    private string IntToBase64BlockId(int index)
     {
-        var rawId = index.ToString("D6"); // Đảm bảo độ dài 6 ký tự: 000001
+        var rawId = index.ToString($"D{BLOCK_ID_LENGTH}");
         return Convert.ToBase64String(Encoding.UTF8.GetBytes(rawId));
     }
 
-            // Helper ngược lại: Base64 -> int
-        private static int DecodeBlockId(string base64Id)
+    // Helper: Base64 -> "000001" -> 1
+    private int Base64ToIntBlockId(string base64)
+    {
+        var bytes = Convert.FromBase64String(base64);
+        var rawId = Encoding.UTF8.GetString(bytes);
+        return int.Parse(rawId);
+    }
+
+    public async Task StageBlockAsync(string blobName, int chunkIndex, Stream content)
+    {
+        var blobClient = _containerClient.GetBlockBlobClient(blobName);
+        var blockId = IntToBase64BlockId(chunkIndex);
+
+        // Stage block lên Azure (chưa tạo thành file, chỉ nằm ở staging area)
+        await blobClient.StageBlockAsync(blockId, content);
+    }
+
+
+    public async Task<List<int>> GetUploadedChunksAsync(string blobName)
+    {
+        var blobClient = _containerClient.GetBlockBlobClient(blobName);
+        if (!await blobClient.ExistsAsync()) return new List<int>();
+
+        try
         {
-            var bytes = Convert.FromBase64String(base64Id);
-            var rawId = Encoding.UTF8.GetString(bytes);
-            return int.Parse(rawId);
-        }
+            // Lấy danh sách các block đang chờ commit (Uncommitted)
+            var blockList = await blobClient.GetBlockListAsync(BlockListTypes.Uncommitted);
 
-        public async Task<List<int>> InitOrGetStatusAsync(string blobName)
+            return blockList.Value.UncommittedBlocks
+                .Select(b => Base64ToIntBlockId(b.Name))
+                .ToList();
+        }
+        catch
         {
-            var blockBlobClient = _containerClient.GetBlockBlobClient(blobName);
-            var missingChunks = new List<int>();
-
-            // Nếu blob đã tồn tại (đã hoàn tất), trả về rỗng
-            if (await blockBlobClient.ExistsAsync())
-            {
-                return new List<int>(); // Đã xong hết
-            }
-
-            try
-            {
-                // Lấy danh sách các block đã upload lên Azure nhưng chưa commit (Uncommitted)
-                var blockList = await blockBlobClient.GetBlockListAsync(BlockListTypes.Uncommitted);
-                var uploadedIndices = blockList.Value.UncommittedBlocks
-                                        .Select(b => DecodeBlockId(b.Name))
-                                        .ToHashSet();
-
-                // Logic này trả về danh sách ĐÃ upload. 
-                // Ở tầng Controller ta sẽ đảo ngược lại để tìm danh sách MISSING nếu cần,
-                // hoặc trả về danh sách uploaded để Client tự tính.
-                // Để đơn giản cho demo, tôi trả về danh sách index ĐÃ CÓ trên server.
-                return uploadedIndices.ToList();
-            }
-            catch
-            {
-                // Chưa có block nào
-                return new List<int>();
-            }
+            return new List<int>();
         }
+    }
+
+
+    public async Task<string> CommitBlocksAsync(string blobName, int totalChunks)
+    {
+        var blobClient = _containerClient.GetBlockBlobClient(blobName);
+
+        // Tạo danh sách BlockID tuần tự từ 0 -> Total-1
+        // Azure sẽ ghép file theo thứ tự của List này
+        var blockIds = Enumerable.Range(0, totalChunks)
+                                 .Select(IntToBase64BlockId)
+                                 .ToList();
+
+        await blobClient.CommitBlockListAsync(blockIds);
+        return blobClient.Uri.ToString();
+    }
+
+    public string GetBlobUrl(string blobName) =>
+        $"{_containerClient.Uri}/{blobName}";
 }

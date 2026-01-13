@@ -4,6 +4,7 @@ using Infrastructure.Middlewares;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Ordering.API.Extensions;
 using Ordering.Application;
+using Ordering.Application.Services;
 using Ordering.Infrastructure;
 using Ordering.Infrastructure.Persistence;
 using Serilog;
@@ -15,24 +16,44 @@ Log.Information($"Start {builder.Environment.ApplicationName} up");
 try
 {
     // Add services to the container.
+
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowAll",
+             policy =>
+             {
+                 policy
+                     .AllowAnyOrigin()
+                     .AllowAnyMethod()
+                     .AllowAnyHeader();
+             });
+        });
+
     builder.AddAppConfigurations();
     builder.Services.AddConfigurationSettings(builder.Configuration);
     builder.Services.AddApplicationServices();
     builder.Services.AddInfrastructureServices();
     builder.Services.ConfigureHealthChecks();
 
+    // 2. Register Services
+    builder.Services.AddScoped<IBlobStorageService, AzureBlobService>();
+    builder.Services.AddScoped<IUploadManager, UploadManager>();
+
     builder.Services.AddControllers();
+
+
     // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.Configure<RouteOptions>(options => options.LowercaseUrls = true);
     builder.Services.AddSwaggerGen();
-    
+
     var app = builder.Build();
 
     // Configure the HTTP request pipeline.
     //if (app.Environment.IsDevelopment())
     //{ 
     app.UseSwagger();
+    app.UseCors("AllowAll");
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json",
         $"{builder.Environment.ApplicationName} v1"));
     //}
@@ -46,7 +67,7 @@ try
     }
 
     app.UseMiddleware<ErrorWrappingMiddleware>();
-    
+
     // app.UseHttpsRedirection(); //production only
     app.UseRouting();
 
